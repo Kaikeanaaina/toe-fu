@@ -1,17 +1,39 @@
 (function(){
 
   //private static varible
+
+
+  var FACING_FACTOR = {
+    LEFT : -1,
+    RIGHT : 1
+  };
+
   var ANIMATIONS = {
     IDLE : {
       name : 'idle',
       frames : [0,1,2,3],
       fps : 5
+    },
+    WALK : {
+      name : 'walk',
+      frames : [4,5],
+      fps : 10
+    },
+    JUMP : {
+      name : 'jump',
+      frames : [6],
+      fps : 1
+    },
+    DIVE : {
+      name : 'dive',
+      frames : [7],
+      fps : 1
+    },
+    DEAD : {
+      name : 'dead',
+      frames : [8],
+      fps : 1
     }
-  };
-
-  var FACING_FACTOR = {
-    LEFT : -1,
-    RIGHT : 1
   };
 
   var WALK_SPEED = 400;
@@ -42,6 +64,9 @@ ToeFu.Player = function(game, id, name) {
   // enable physics (adds this.body)
   this.game.physics.enable(this, Phaser.Physics.ARCADE);
 
+    // use stage bounding box
+  this.body.collideWorldBounds = true;
+
   // set center registration point
   this.anchor = { x : 0.5, y : 0.5};
 
@@ -57,9 +82,10 @@ ToeFu.Player = function(game, id, name) {
     //   this.animations.add(ANIMATIONS.IDLE.name, frames );
     // }
   this.animations.add(ANIMATIONS.IDLE.name, ANIMATIONS.IDLE.frames.map(select_sprite_row(this.id)));
-
-  //took this out because it overwrites the add above this line
-    //this.animations.add(ANIMATIONS.IDLE.name, ANIMATIONS.IDLE.frames);
+  this.animations.add(ANIMATIONS.WALK.name, ANIMATIONS.WALK.frames.map(select_sprite_row(this.id)));
+  this.animations.add(ANIMATIONS.JUMP.name, ANIMATIONS.JUMP.frames.map(select_sprite_row(this.id)));
+  this.animations.add(ANIMATIONS.DIVE.name, ANIMATIONS.DIVE.frames.map(select_sprite_row(this.id)));
+  this.animations.add(ANIMATIONS.DEAD.name, ANIMATIONS.DEAD.frames.map(select_sprite_row(this.id)));
 
   //play the initial animation
   this.animations.play(ANIMATIONS.IDLE.name, ANIMATIONS.IDLE.fps, true);
@@ -82,11 +108,29 @@ ToeFu.Player.FACING = {
 ToeFu.Player.prototype.update = function(){
 
   // update facing
-  this.scale.x = FACING_FACTOR[ this.facing ];
+  if( this.alive ){
+    this.scale.x = FACING_FACTOR[ this.facing ];
+  }
+
+  // update animations
+  if(!this.alive){
+    this.animations.play(ANIMATIONS.DEAD.name);
+  }else if(this.is_diving){
+    this.animations.play(ANIMATIONS.DIVE.name);
+  }else{
+    if(this.body.y < ToeFu.Game.FLOOR_Y){ // in the air
+      this.animations.play(ANIMATIONS.JUMP.name);
+    } else if(this.body.velocity.x !== 0){ // running
+      this.animations.play(ANIMATIONS.WALK.name, ANIMATIONS.WALK.fps, true);
+    } else {
+      this.animations.play(ANIMATIONS.IDLE.name, ANIMATIONS.IDLE.fps, true);
+    }
+  }
 
 };
 
 ToeFu.Player.prototype.jump = function(){
+ if(!this.alive) return;
  // allow jumping from the floor (not in mid air)
     if( this.body.y === ToeFu.Game.FLOOR_Y ){
       this.body.velocity.y = -JUMP_HEIGHT;
@@ -98,6 +142,7 @@ ToeFu.Player.prototype.jump = function(){
 };
 
 ToeFu.Player.prototype.dive = function(){
+  if(!this.alive) return;
 
 if( this.body.y < ToeFu.Game.FLOOR_Y ){
       this.body.velocity.y = DIVE_SPEED;
@@ -121,10 +166,12 @@ ToeFu.Player.prototype.dive_stop = function(){
 };
 
 ToeFu.Player.prototype.step_left = function(){
- this.body.velocity.x = -WALK_SPEED;
+  if(!this.alive) return;
+  this.body.velocity.x = -WALK_SPEED;
 };
 
 ToeFu.Player.prototype.step_right = function(){
+  if(!this.alive) return;
   this.body.velocity.x = WALK_SPEED;
 };
 
@@ -147,6 +194,8 @@ ToeFu.Player.prototype.defeat = function(){
   this.alive = false;
 
 };
+
+
 
 
 

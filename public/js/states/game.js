@@ -45,6 +45,8 @@ ToeFu.Game.prototype.create = function(){
 
   this.match_state = MATCH.IN_PROGRESS;
 
+  this.game.add.tileSprite(0,0,ToeFu.ASSETS.IMAGE.BG.width,ToeFu.ASSETS.IMAGE.BG.height, ToeFu.ASSETS.IMAGE.BG.name);
+
   this.player_1 = new ToeFu.Player( this.game, 0);
   this.player_2 = new ToeFu.Player( this.game, 1);
   this.game.add.existing(this.player_1);
@@ -56,8 +58,10 @@ ToeFu.Game.prototype.create = function(){
   this.player_2.x = INITIAL_POSITIONS[1].x;
   this.player_2.y = INITIAL_POSITIONS[1].y;
 
+
     // initialize input handler
   this.input = new ToeFu.GameInput(this);
+
 
 };
 
@@ -155,7 +159,9 @@ ToeFu.Game.prototype.shutdown = function(){
 };
 
 ToeFu.Game.prototype.continue = function(){
-
+  if(this.match_state === MATCH.RESOLVED){
+    this.state.start(ToeFu.STATES.BOOT);
+  }
 };
 
 
